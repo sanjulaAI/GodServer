@@ -1,6 +1,6 @@
 #Requires -Version 5.1
 <#
-    GOD SERVER — All-in-one Windows Toolbox
+    GOD SERVER - All-in-one Windows Toolbox
     ----------------------------------------
     Single-file WinForms GUI: app installer, tweaks, drivers, utilities,
     live dashboard, and a separated high-risk "Advanced" tier.
@@ -375,7 +375,7 @@ function Show-ConfirmDialog {
 }
 #endregion
 
-#region Tweak definitions (declarative — generic apply/revert engine)
+#region Tweak definitions (declarative - generic apply/revert engine)
 $ClassicMenuKey = 'HKCU:\Software\Classes\CLSID\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}'
 
 $Tweaks = @(
@@ -627,10 +627,10 @@ $AppCatalog = [ordered]@{
 }
 #endregion
 
-#region Advanced (high-risk) tools — fetched from repo batch/ at run time
+#region Advanced (high-risk) tools - fetched from repo batch/ at run time
 $AdvancedTools = @(
     @{ Name='Permanent Debloater'; Risk='!';   RiskKey='Warning'; File='permanent-debloater.bat'
-       Warning="This permanently removes 25+ built-in apps (Cortana, Xbox, Skype, Maps, etc.) for ALL users, including provisioned packages — they will NOT return after Windows updates.`n`nProceed?" },
+       Warning="This permanently removes 25+ built-in apps (Cortana, Xbox, Skype, Maps, etc.) for ALL users, including provisioned packages - they will NOT return after Windows updates.`n`nProceed?" },
     @{ Name='EXM Premium Tweaks'; Risk='!!';  RiskKey='Danger';  File='exm-premium-tweaks.bat'
        Warning="HIGH RISK.`nDisables UAC, changes BCD boot config, disables Hyper-V/virtualization and System Restore, applies deep registry tweaks.`n`nLargely irreversible without manual cleanup. Create a System Restore point first.`n`nProceed?" },
     @{ Name='GodMode Ultimate'; Risk='!!';    RiskKey='Danger';  File='godmode.bat'
@@ -638,7 +638,7 @@ $AdvancedTools = @(
     @{ Name='Nuclear Process Killer'; Risk='!!'; RiskKey='Danger'; File='nuclear-process-killer.bat'
        Warning="HIGH RISK.`nPermanently disables Windows Update AND Windows Defender, kills 100+ processes, disables 80+ services.`n`nOnly proceed if you run third-party antivirus.`n`nProceed?" },
     @{ Name='Auto BIOS Tweaks'; Risk='!!!';   RiskKey='Danger';  File='auto-bios.bat'
-       Warning="EXTREME RISK — FIRMWARE MODIFICATION.`nRequires SCEWIN_64.exe. Disables Secure Boot, TPM, and other BIOS settings directly.`n`nCan cause boot failure or require a CMOS reset to recover. Gigabyte boards reportedly have issues.`n`nOnly proceed if you know exactly what you're doing." }
+       Warning="EXTREME RISK - FIRMWARE MODIFICATION.`nRequires SCEWIN_64.exe. Disables Secure Boot, TPM, and other BIOS settings directly.`n`nCan cause boot failure or require a CMOS reset to recover. Gigabyte boards reportedly have issues.`n`nOnly proceed if you know exactly what you're doing." }
 )
 function Invoke-AdvancedTool($tool) {
     if (-not (Show-ConfirmDialog -Title "Confirm: $($tool.Name)" -Message $tool.Warning -AccentKey $tool.RiskKey)) { return }
@@ -817,7 +817,7 @@ function Build-AppsPanel {
     $top.Size = New-Object System.Drawing.Size(900,70)
     $top.Location = New-Object System.Drawing.Point(36,30)
     $panel.Controls.Add($top)
-    New-SectionHeader $top 'Install Apps' 'Powered by winget — select what you need'
+    New-SectionHeader $top 'Install Apps' 'Powered by winget - select what you need'
 
     $scroll = New-Object System.Windows.Forms.Panel
     $scroll.Location = New-Object System.Drawing.Point(36,110)
@@ -934,7 +934,7 @@ function Build-TweaksPanel {
     $top.Size = New-Object System.Drawing.Size(900,70)
     $top.Location = New-Object System.Drawing.Point(36,30)
     $panel.Controls.Add($top)
-    New-SectionHeader $top 'System Tweaks' 'Safe, reversible — toggle on/off anytime'
+    New-SectionHeader $top 'System Tweaks' 'Safe, reversible - toggle on/off anytime'
 
     $scroll = New-Object System.Windows.Forms.Panel
     $scroll.Location = New-Object System.Drawing.Point(36,110)
@@ -1116,7 +1116,7 @@ function Build-AdvancedPanel {
     $top.Size = New-Object System.Drawing.Size(900,70)
     $top.Location = New-Object System.Drawing.Point(36,30)
     $panel.Controls.Add($top)
-    New-SectionHeader $top 'Advanced Tools' 'Deep system changes — read every warning before running'
+    New-SectionHeader $top 'Advanced Tools' 'Deep system changes - read every warning before running'
 
     $y = 110
     foreach ($tool in $AdvancedTools) {
