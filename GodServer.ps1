@@ -232,23 +232,23 @@ $BackupDir  = Join-Path $env:LOCALAPPDATA 'GodServer'
 $BackupFile = Join-Path $BackupDir 'backup.json'
 if (-not (Test-Path $BackupDir)) { New-Item -Path $BackupDir -ItemType Directory -Force | Out-Null }
 
-function ConvertTo-HashtableShallow($obj) {
+function global:ConvertTo-HashtableShallow($obj) {
     $ht = @{}
     if ($null -eq $obj) { return $ht }
     foreach ($p in $obj.PSObject.Properties) { $ht[$p.Name] = $p.Value }
     return $ht
 }
-function Get-BackupStore {
+function global:Get-BackupStore {
     if (Test-Path $BackupFile) {
         try { return ConvertTo-HashtableShallow (Get-Content $BackupFile -Raw | ConvertFrom-Json) }
         catch { return @{} }
     }
     return @{}
 }
-function Save-BackupStore($store) {
+function global:Save-BackupStore($store) {
     ($store | ConvertTo-Json -Depth 8) | Set-Content -Path $BackupFile -Encoding UTF8
 }
-function Backup-RegValue {
+function global:Backup-RegValue {
     param([string]$Path, [string]$Name)
     $existed = $false; $val = $null
     if (Test-Path $Path) {
@@ -257,7 +257,7 @@ function Backup-RegValue {
     }
     return @{ Path = $Path; Name = $Name; Existed = $existed; Value = $val }
 }
-function Set-RegValueSafe {
+function global:Set-RegValueSafe {
     param([string]$Path, [string]$Name, $Value, [string]$Type = 'DWord')
     if (-not (Test-Path $Path)) { New-Item -Path $Path -Force | Out-Null }
     if ($Name -eq '(Default)') {
@@ -266,7 +266,7 @@ function Set-RegValueSafe {
         New-ItemProperty -Path $Path -Name $Name -PropertyType $Type -Value $Value -Force | Out-Null
     }
 }
-function Restore-RegValue {
+function global:Restore-RegValue {
     param($Entry)
     if ($Entry.Existed) {
         if (Test-Path $Entry.Path) {
@@ -277,7 +277,7 @@ function Restore-RegValue {
         if (Test-Path $Entry.Path) { Remove-ItemProperty -Path $Entry.Path -Name $Entry.Name -Force -ErrorAction SilentlyContinue }
     }
 }
-function Restart-ExplorerProcess {
+function global:Restart-ExplorerProcess {
     Get-Process explorer -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
     Start-Sleep -Milliseconds 500
     if (-not (Get-Process explorer -ErrorAction SilentlyContinue)) { Start-Process explorer.exe }
@@ -285,7 +285,7 @@ function Restart-ExplorerProcess {
 #endregion
 
 #region Dialog helpers
-function Show-InfoDialog {
+function global:Show-InfoDialog {
     param([string]$Title, [string]$Message, [switch]$Wide)
     $dlg = New-Object System.Windows.Forms.Form
     $dlg.Text = $Title
@@ -327,7 +327,7 @@ function Show-InfoDialog {
     $dlg.ShowDialog() | Out-Null
 }
 
-function Show-ConfirmDialog {
+function global:Show-ConfirmDialog {
     param([string]$Title, [string]$Message, [string]$AccentKey = 'Warning')
     $dlg = New-Object System.Windows.Forms.Form
     $dlg.Text = $Title
@@ -423,7 +423,7 @@ $Tweaks = @(
        RestartExplorer=$false }
 )
 
-function Test-TweakEnabled($tweak) {
+function global:Test-TweakEnabled($tweak) {
     if ($tweak.TestFn) { return (& $tweak.TestFn) }
     foreach ($r in $tweak.Regs) {
         $cur = $null
@@ -435,7 +435,7 @@ function Test-TweakEnabled($tweak) {
     }
     return $true
 }
-function Invoke-ApplyTweak($tweak) {
+function global:Invoke-ApplyTweak($tweak) {
     if ($tweak.ApplyFn) { & $tweak.ApplyFn; return }
     $store = Get-BackupStore
     $entries = @()
@@ -448,7 +448,7 @@ function Invoke-ApplyTweak($tweak) {
     if ($tweak.PostApply) { & $tweak.PostApply }
     if ($tweak.RestartExplorer) { Restart-ExplorerProcess }
 }
-function Invoke-RevertTweak($tweak) {
+function global:Invoke-RevertTweak($tweak) {
     if ($tweak.RevertFn) { & $tweak.RevertFn; return }
     $store = Get-BackupStore
     if ($store.ContainsKey($tweak.Key)) {
@@ -467,7 +467,7 @@ $DebloatApps = @(
     'Microsoft.XboxGamingOverlay','Microsoft.XboxIdentityProvider','Microsoft.YourPhone',
     'Microsoft.ZuneMusic','Microsoft.ZuneVideo','king.com.CandyCrushSaga','Clipchamp.Clipchamp'
 )
-function Invoke-Debloat {
+function global:Invoke-Debloat {
     $msg = "This removes $($DebloatApps.Count) built-in apps for the current user:`n" +
            "Bing News/Weather, Solitaire, Xbox apps, Your Phone, Candy Crush, Clipchamp and more.`n`nProceed?"
     if (-not (Show-ConfirmDialog -Title 'Confirm: Remove Bloatware' -Message $msg -AccentKey 'Warning')) { return }
@@ -479,14 +479,14 @@ function Invoke-Debloat {
 #endregion
 
 #region Utility functions
-function Show-SystemInfo {
+function global:Show-SystemInfo {
     $os = Get-CimInstance Win32_OperatingSystem
     $cpu = Get-CimInstance Win32_Processor
     $cs = Get-CimInstance Win32_ComputerSystem
     $msg = "Computer:  $env:COMPUTERNAME`nUser:      $env:USERNAME`nOS:        $($os.Caption)`nBuild:     $($os.BuildNumber)`nCPU:       $($cpu.Name)`nRAM:       $([math]::Round($cs.TotalPhysicalMemory/1GB,2)) GB"
     Show-InfoDialog -Title 'System Info' -Message $msg
 }
-function Invoke-CleanTemp {
+function global:Invoke-CleanTemp {
     $paths = @("$env:TEMP\*","$env:WINDIR\Temp\*","$env:WINDIR\Prefetch\*")
     $freed = 0
     foreach ($p in $paths) {
@@ -498,11 +498,11 @@ function Invoke-CleanTemp {
     }
     Show-InfoDialog -Title 'Cleanup Complete' -Message "Temp files cleaned.`nApprox $([math]::Round($freed/1MB,2)) MB freed."
 }
-function Invoke-FlushDns {
+function global:Invoke-FlushDns {
     ipconfig /flushdns | Out-Null
     Show-InfoDialog -Title 'Network' -Message 'DNS cache flushed successfully.'
 }
-function Show-WifiPasswords {
+function global:Show-WifiPasswords {
     $profiles = (netsh wlan show profiles) | Select-String ':(.+)$' | ForEach-Object { $_.Matches.Groups[1].Value.Trim() }
     if (-not $profiles) { Show-InfoDialog -Title 'WiFi Passwords' -Message 'No saved WiFi profiles found.'; return }
     $out = ''
@@ -514,7 +514,7 @@ function Show-WifiPasswords {
     }
     Show-InfoDialog -Title 'Saved WiFi Passwords' -Message $out -Wide
 }
-function Export-InstalledPrograms {
+function global:Export-InstalledPrograms {
     $paths = @('HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*',
                'HKLM:\Software\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*',
                'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*')
@@ -529,7 +529,7 @@ function Export-InstalledPrograms {
     Show-InfoDialog -Title 'Installed Programs' -Message "Exported $($progs.Count) programs to Desktop:`n$out"
     Start-Process notepad.exe $out
 }
-function Show-ProductKey {
+function global:Show-ProductKey {
     try {
         $key = (Get-CimInstance SoftwareLicensingService -ErrorAction Stop).OA3xOriginalProductKey
         $os = Get-CimInstance Win32_OperatingSystem
@@ -541,7 +541,7 @@ function Show-ProductKey {
         Show-InfoDialog -Title 'Error' -Message "Error reading product key:`n$($_.Exception.Message)"
     }
 }
-function Invoke-ResetNetwork {
+function global:Invoke-ResetNetwork {
     ipconfig /flushdns | Out-Null
     ipconfig /release | Out-Null
     ipconfig /renew | Out-Null
@@ -554,36 +554,36 @@ function Invoke-ResetNetwork {
 #endregion
 
 #region Dashboard data functions
-function Get-CpuPercent {
+function global:Get-CpuPercent {
     try { [math]::Round((Get-CimInstance Win32_PerfFormattedData_PerfOS_Processor -Filter "Name='_Total'").PercentProcessorTime,0) }
     catch { 0 }
 }
-function Get-RamPercent {
+function global:Get-RamPercent {
     try {
         $os = Get-CimInstance Win32_OperatingSystem
         $used = $os.TotalVisibleMemorySize - $os.FreePhysicalMemory
         [math]::Round(($used / $os.TotalVisibleMemorySize) * 100, 0)
     } catch { 0 }
 }
-function Get-DiskPercent {
+function global:Get-DiskPercent {
     try {
         $d = Get-CimInstance Win32_LogicalDisk -Filter "DeviceID='C:'"
         if ($d) { [math]::Round((($d.Size - $d.FreeSpace) / $d.Size) * 100, 0) } else { 0 }
     } catch { 0 }
 }
-function Get-LocalIp {
+function global:Get-LocalIp {
     try { (Get-NetIPAddress -AddressFamily IPv4 -ErrorAction SilentlyContinue | Where-Object { $_.InterfaceAlias -notmatch 'Loopback' -and $_.IPAddress -notlike '169.*' } | Select-Object -First 1).IPAddress }
     catch { $null }
 }
-function Get-GatewayIp {
+function global:Get-GatewayIp {
     try { (Get-NetRoute -DestinationPrefix '0.0.0.0/0' -ErrorAction SilentlyContinue | Select-Object -First 1).NextHop }
     catch { $null }
 }
-function Get-DnsServers {
+function global:Get-DnsServers {
     try { ((Get-DnsClientServerAddress -AddressFamily IPv4 -ErrorAction SilentlyContinue | Where-Object { $_.ServerAddresses } | Select-Object -First 1).ServerAddresses -join ', ') }
     catch { $null }
 }
-function Get-PublicIpAddress {
+function global:Get-PublicIpAddress {
     try { (Invoke-RestMethod -Uri 'https://api.ipify.org' -TimeoutSec 4) } catch { 'Unavailable' }
 }
 #endregion
@@ -640,7 +640,7 @@ $AdvancedTools = @(
     @{ Name='Auto BIOS Tweaks'; Risk='!!!';   RiskKey='Danger';  File='auto-bios.bat'
        Warning="EXTREME RISK - FIRMWARE MODIFICATION.`nRequires SCEWIN_64.exe. Disables Secure Boot, TPM, and other BIOS settings directly.`n`nCan cause boot failure or require a CMOS reset to recover. Gigabyte boards reportedly have issues.`n`nOnly proceed if you know exactly what you're doing." }
 )
-function Invoke-AdvancedTool($tool) {
+function global:Invoke-AdvancedTool($tool) {
     if (-not (Show-ConfirmDialog -Title "Confirm: $($tool.Name)" -Message $tool.Warning -AccentKey $tool.RiskKey)) { return }
     if (-not (Show-ConfirmDialog -Title 'Final Confirmation' -Message "Last chance to cancel.`n`nRun '$($tool.Name)' now?" -AccentKey 'Danger')) { return }
     $tmp = Join-Path $env:TEMP $tool.File
@@ -660,7 +660,7 @@ function Invoke-AdvancedTool($tool) {
 $script:Panels     = @{}
 $script:NavButtons = @{}
 
-function New-SectionHeader($parent, $title, $subtitle) {
+function global:New-SectionHeader($parent, $title, $subtitle) {
     $lblTitle = New-Object System.Windows.Forms.Label
     $lblTitle.Text = $title
     $lblTitle.Font = $FontTitle
@@ -678,7 +678,7 @@ function New-SectionHeader($parent, $title, $subtitle) {
     $parent.Controls.Add($lblSub)
 }
 
-function New-StatCard($parent, $x, $y, $w, $h, $label) {
+function global:New-StatCard($parent, $x, $y, $w, $h, $label) {
     $card = New-Object GodServerUI.Card
     $card.Size = New-Object System.Drawing.Size($w, $h)
     $card.Location = New-Object System.Drawing.Point($x, $y)
@@ -715,7 +715,7 @@ function New-StatCard($parent, $x, $y, $w, $h, $label) {
     $parent.Controls.Add($card)
     return @{ Card=$card; ValueLabel=$lblVal; Track=$track; Fill=$fill }
 }
-function Update-StatCard($stat, $percent) {
+function global:Update-StatCard($stat, $percent) {
     $p = [math]::Max(0, [math]::Min(100, $percent))
     $stat.ValueLabel.Text = "$p%"
     $color = if ($p -ge 85) { $T.Danger } elseif ($p -ge 60) { $T.Warning } else { $T.Success }
@@ -724,7 +724,7 @@ function Update-StatCard($stat, $percent) {
     $stat.Fill.Size = New-Object System.Drawing.Size([math]::Max(2,$w), 6)
 }
 
-function Build-DashboardPanel {
+function global:Build-DashboardPanel {
     $panel = New-Object System.Windows.Forms.Panel
     $panel.Dock = 'Fill'
     $panel.BackColor = $T.White
@@ -806,7 +806,7 @@ function Build-DashboardPanel {
     return $panel
 }
 
-function Build-AppsPanel {
+function global:Build-AppsPanel {
     $panel = New-Object System.Windows.Forms.Panel
     $panel.Dock = 'Fill'
     $panel.BackColor = $T.White
@@ -923,7 +923,7 @@ function Build-AppsPanel {
     return $panel
 }
 
-function Build-TweaksPanel {
+function global:Build-TweaksPanel {
     $panel = New-Object System.Windows.Forms.Panel
     $panel.Dock = 'Fill'
     $panel.BackColor = $T.White
@@ -1013,7 +1013,7 @@ function Build-TweaksPanel {
     return $panel
 }
 
-function Build-DriversPanel {
+function global:Build-DriversPanel {
     $panel = New-Object System.Windows.Forms.Panel
     $panel.Dock = 'Fill'
     $panel.BackColor = $T.White
@@ -1065,7 +1065,7 @@ function Build-DriversPanel {
     return $panel
 }
 
-function Build-UtilitiesPanel {
+function global:Build-UtilitiesPanel {
     $panel = New-Object System.Windows.Forms.Panel
     $panel.Dock = 'Fill'
     $panel.BackColor = $T.White
@@ -1105,7 +1105,7 @@ function Build-UtilitiesPanel {
     return $panel
 }
 
-function Build-AdvancedPanel {
+function global:Build-AdvancedPanel {
     $panel = New-Object System.Windows.Forms.Panel
     $panel.Dock = 'Fill'
     $panel.BackColor = $T.White
@@ -1158,7 +1158,7 @@ function Build-AdvancedPanel {
     return $panel
 }
 
-function Show-Section($key) {
+function global:Show-Section($key) {
     foreach ($k in $script:Panels.Keys) { $script:Panels[$k].Visible = ($k -eq $key) }
     foreach ($k in $script:NavButtons.Keys) {
         $script:NavButtons[$k].Selected = ($k -eq $key)
@@ -1166,7 +1166,7 @@ function Show-Section($key) {
     }
 }
 
-function Build-MainForm {
+function global:Build-MainForm {
     $form = New-Object System.Windows.Forms.Form
     $form.Text = 'GOD SERVER'
     $form.FormBorderStyle = 'None'
