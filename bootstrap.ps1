@@ -1,6 +1,6 @@
 #Requires -Version 5.1
 <#
-    GOD SERVER — Bootstrap Loader
+    GOD SERVER - Bootstrap Loader
     Launch with:
         irm https://raw.githubusercontent.com/sanjulaAI/GodServer/main/bootstrap.ps1 | iex
     Auto-elevates, downloads the latest GodServer.ps1 fresh, and runs it.
