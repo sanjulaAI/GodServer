@@ -321,7 +321,7 @@ function Show-InfoDialog {
     $btn.Font = $FontBodyB
     $btn.Size = New-Object System.Drawing.Size(96, 34)
     $btn.Location = New-Object System.Drawing.Point(($dlg.Width - 128), ($dlg.Height - 74))
-    $btn.Add_Click({ $dlg.Close() })
+    $btn.Add_Click({ $dlg.Close() }.GetNewClosure())
     $dlg.Controls.Add($btn)
     $dlg.AcceptButton = $btn
     $dlg.ShowDialog() | Out-Null
@@ -358,7 +358,7 @@ function Show-ConfirmDialog {
     $btnYes.Font = $FontBodyB
     $btnYes.Size = New-Object System.Drawing.Size(150, 36)
     $btnYes.Location = New-Object System.Drawing.Point(200, 260)
-    $btnYes.Add_Click({ $dlg.Result = $true; $dlg.Close() })
+    $btnYes.Add_Click({ $dlg.Result = $true; $dlg.Close() }.GetNewClosure())
     $dlg.Controls.Add($btnYes)
 
     $btnNo = New-Object GodServerUI.RoundedButton
@@ -367,7 +367,7 @@ function Show-ConfirmDialog {
     $btnNo.Font = $FontBody
     $btnNo.Size = New-Object System.Drawing.Size(100, 36)
     $btnNo.Location = New-Object System.Drawing.Point(360, 260)
-    $btnNo.Add_Click({ $dlg.Result = $false; $dlg.Close() })
+    $btnNo.Add_Click({ $dlg.Result = $false; $dlg.Close() }.GetNewClosure())
     $dlg.Controls.Add($btnNo)
 
     $dlg.ShowDialog() | Out-Null
@@ -787,12 +787,7 @@ function Build-DashboardPanel {
         } catch {
             $pingResult.Text = 'Ping failed / no reply'
         }
-    })
-
-    $refreshNet = {
-        $ip = Get-LocalIp; $gw = Get-GatewayIp; $dns = Get-DnsServers; $pub = Get-PublicIpAddress
-        $netInfoLbl.Text = "Local IP:  $ip`nGateway:   $gw`nDNS:       $dns`nPublic IP: $pub"
-    }
+    }.GetNewClosure())
 
     $timer = New-Object System.Windows.Forms.Timer
     $timer.Interval = 2000
@@ -800,10 +795,13 @@ function Build-DashboardPanel {
         Update-StatCard $cpuStat (Get-CpuPercent)
         Update-StatCard $ramStat (Get-RamPercent)
         Update-StatCard $diskStat (Get-DiskPercent)
-    })
+    }.GetNewClosure())
     $timer.Start()
 
-    $panel.Add_HandleCreated({ & $refreshNet })
+    $panel.Add_HandleCreated({
+        $ip = Get-LocalIp; $gw = Get-GatewayIp; $dns = Get-DnsServers; $pub = Get-PublicIpAddress
+        $netInfoLbl.Text = "Local IP:  $ip`nGateway:   $gw`nDNS:       $dns`nPublic IP: $pub"
+    }.GetNewClosure())
 
     return $panel
 }
@@ -900,7 +898,7 @@ function Build-AppsPanel {
                 $installBtn.Text = 'Install Selected'
             }
         }
-    })
+    }.GetNewClosure())
     $jobTimer.Start()
 
     $installBtn.Add_Click({
@@ -920,7 +918,7 @@ function Build-AppsPanel {
                 winget install --id $id -e --silent --accept-package-agreements --accept-source-agreements 2>&1
             }
         } -ArgumentList (,$selected)
-    })
+    }.GetNewClosure())
 
     return $panel
 }
@@ -1062,7 +1060,7 @@ function Build-DriversPanel {
         Get-CimInstance Win32_PnPSignedDriver -ErrorAction SilentlyContinue |
             Where-Object { $_.DeviceName } | Sort-Object DeviceName |
             ForEach-Object { $grid.Rows.Add($_.DeviceName, $_.Manufacturer, $_.DriverVersion) | Out-Null }
-    })
+    }.GetNewClosure())
 
     return $panel
 }
@@ -1208,9 +1206,9 @@ function Build-MainForm {
     $btnClose.TextAlign = 'MiddleCenter'
     $btnClose.Cursor = [System.Windows.Forms.Cursors]::Hand
     $btnClose.Location = New-Object System.Drawing.Point(1238,0)
-    $btnClose.Add_Click({ $form.Close() })
-    $btnClose.Add_MouseEnter({ $btnClose.BackColor = $T.Danger })
-    $btnClose.Add_MouseLeave({ $btnClose.BackColor = $T.Sidebar })
+    $btnClose.Add_Click({ $form.Close() }.GetNewClosure())
+    $btnClose.Add_MouseEnter({ $btnClose.BackColor = $T.Danger }.GetNewClosure())
+    $btnClose.Add_MouseLeave({ $btnClose.BackColor = $T.Sidebar }.GetNewClosure())
     $titleBar.Controls.Add($btnClose)
 
     $btnMin = New-Object System.Windows.Forms.Label
@@ -1221,9 +1219,9 @@ function Build-MainForm {
     $btnMin.TextAlign = 'MiddleCenter'
     $btnMin.Cursor = [System.Windows.Forms.Cursors]::Hand
     $btnMin.Location = New-Object System.Drawing.Point(1196,0)
-    $btnMin.Add_Click({ $form.WindowState = 'Minimized' })
-    $btnMin.Add_MouseEnter({ $btnMin.BackColor = $T.SidebarHover })
-    $btnMin.Add_MouseLeave({ $btnMin.BackColor = $T.Sidebar })
+    $btnMin.Add_Click({ $form.WindowState = 'Minimized' }.GetNewClosure())
+    $btnMin.Add_MouseEnter({ $btnMin.BackColor = $T.SidebarHover }.GetNewClosure())
+    $btnMin.Add_MouseLeave({ $btnMin.BackColor = $T.Sidebar }.GetNewClosure())
     $titleBar.Controls.Add($btnMin)
 
     # Drag-to-move via title bar
@@ -1236,7 +1234,7 @@ function Build-MainForm {
             $p = $form.PointToScreen((New-Object System.Drawing.Point($e.X,$e.Y)))
             $form.Location = New-Object System.Drawing.Point(($p.X - $script:__dragOff.X), ($p.Y - $script:__dragOff.Y))
         }
-    })
+    }.GetNewClosure())
     $titleBar.Add_MouseUp({ $script:__dragging = $false })
 
     # Body container
